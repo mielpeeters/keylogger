@@ -1,0 +1,7 @@
+/target
+/assets/keylog*
+/assets/qwerty_ansi.svg
+saved.zip
+heatmap.svg
+plot.py
+bell.wav
