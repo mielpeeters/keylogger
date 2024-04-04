@@ -19,9 +19,11 @@ command can be used from within any directory.
 Note: this is the data directory of the superuser.
 
 # Usage
+First, find out which event file in `/dev/input/` is your keyboard. 
+You can use the tool `evtest` to find the event file number (`eventX`).
 
 ```shell
-sudo keylogger log
+sudo keylogger log -e X
 ```
 This will start the logging, with default output path (./assets/keylog.bin). Run with `-h` to see more options.
 
