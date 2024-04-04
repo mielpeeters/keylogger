@@ -91,7 +91,9 @@ pub fn heatmap(args: HeatmapArgs) -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let log = KeyLog::from_file(&log_path).unwrap();
+    let password = rpassword::prompt_password("Password: ").unwrap();
+
+    let log = KeyLog::from_file(&log_path, &password).unwrap();
 
     let mut keyboard_svg = OpenOptions::new().read(true).open(kbd_svg_path)?;
     let mut kbd = String::new();

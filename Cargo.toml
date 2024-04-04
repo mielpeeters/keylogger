@@ -1,6 +1,8 @@
 [package]
 name = "keylogger"
-version = "0.1.0"
+authors = ["Miel Peeters"]
+description = "A keylogger for Linux"
+version = "0.2.0"
 edition = "2021"
 
 [features]
@@ -16,3 +18,8 @@ notify-rust = "4.10.0"
 soloud = "1.0.5"
 colorous = "1.0.13"
 dirs = "5.0.1"
+aes-gcm = "0.10.3"
+pbkdf2 = { version = "0.12", features = ["simple"] }
+sha2 = "0.10.8"
+rand_core = { version = "0.6", features = ["std"] }
+rpassword = "7.3.1"

@@ -17,6 +17,8 @@ nest! {
                 Export(ExportArgs),
                 /// Draw a heatmap of keypresses
                 Heatmap(HeatmapArgs),
+                /// Encrypt the unencrypted log
+                Encrypt(EncryptArgs),
             },
     }
 }
@@ -68,4 +70,11 @@ pub struct HeatmapArgs {
     /// The path to the output svg file
     #[arg(short, long, default_value = "heatmap.svg")]
     pub out_path: String,
+}
+
+#[derive(Args, Debug)]
+pub struct EncryptArgs {
+    /// The path to the repository directory
+    #[arg(short, long)]
+    pub in_path: Option<String>,
 }

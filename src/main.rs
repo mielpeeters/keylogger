@@ -42,6 +42,7 @@ use clap::Parser;
 
 mod cli;
 mod codes;
+mod encrypt;
 mod files;
 mod heatmap;
 mod keylog;
@@ -57,5 +58,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cli::SubCommand::Log(l) => keylog::log_keys(Arc::clone(&term), l),
         cli::SubCommand::Export(e) => keylog::export(e),
         cli::SubCommand::Heatmap(h) => heatmap::heatmap(h),
+        cli::SubCommand::Encrypt(e) => files::encrypt(e),
     }
 }

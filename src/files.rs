@@ -2,7 +2,7 @@ use dirs::data_dir;
 use std::fs::{File, OpenOptions};
 use std::path::PathBuf;
 
-use crate::cli::InitArgs;
+use crate::cli::{EncryptArgs, InitArgs};
 
 pub fn init(args: InitArgs) -> Result<(), Box<dyn std::error::Error>> {
     let mut asset_path: PathBuf = args.path.into();
@@ -54,4 +54,20 @@ pub fn qwerty_ansi() -> Result<PathBuf, Box<dyn std::error::Error>> {
     path.push("qwerty_ansi_anno.svg");
 
     Ok(path)
+}
+
+pub fn encrypt(args: EncryptArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let log_path = match args.in_path {
+        Some(path) => path,
+        None => {
+            let path = log_bin()?;
+            path.to_str().unwrap().to_string()
+        }
+    };
+    let data = std::fs::read(&log_path)?;
+    let password = rpassword::prompt_password("Password: ").unwrap();
+    let encrypted = crate::encrypt::encrypt(&data, password.as_bytes())?;
+    std::fs::write(log_path, encrypted)?;
+
+    Ok(())
 }

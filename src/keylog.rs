@@ -1,5 +1,5 @@
 use crate::codes::Keys;
-use crate::{cli, files};
+use crate::{cli, encrypt, files};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "bell")]
 use soloud::{audio, AudioExt as _, LoadExt, Soloud};
@@ -32,16 +32,17 @@ impl KeyLog {
         self.0.len()
     }
 
-    pub fn from_file(path: &str) -> Option<Self> {
+    pub fn from_file(path: &str, password: &str) -> Option<Self> {
         let Ok(mut file) = OpenOptions::new().read(true).open(path) else {
             return None;
         };
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer).unwrap();
+        let buffer = encrypt::decrypt(&buffer, password.as_bytes()).unwrap();
         Some(bincode::deserialize(&buffer).unwrap())
     }
 
-    fn to_file(&self, path: &str) {
+    fn to_file(&self, path: &str, password: &str) {
         let mut file = OpenOptions::new()
             .write(true)
             .append(true)
@@ -49,7 +50,8 @@ impl KeyLog {
             .open(path)
             .unwrap();
         let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
-        file.write_all(&encoded).unwrap();
+        let encrypted = encrypt::encrypt(&encoded, password.as_bytes()).unwrap();
+        file.write_all(&encrypted).unwrap();
     }
 }
 
@@ -107,7 +109,10 @@ pub fn log_keys(
 
     let mut buffer = [0; 24];
 
-    let mut log = match KeyLog::from_file(&out_path) {
+    // get the password from the user (blind typing)
+    let password = rpassword::prompt_password("Password: ").unwrap();
+
+    let mut log = match KeyLog::from_file(&out_path, &password) {
         Some(log) => log,
         None => KeyLog::new(),
     };
@@ -133,12 +138,12 @@ pub fn log_keys(
         }
 
         if term.load(Ordering::Relaxed) {
-            log.to_file(&out_path);
+            log.to_file(&out_path, &password);
             break;
         }
 
         if log.len() % 1000 == 0 {
-            log.to_file(&out_path);
+            log.to_file(&out_path, &password);
         }
     }
 
@@ -161,7 +166,9 @@ pub fn export(args: cli::ExportArgs) -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let log = KeyLog::from_file(&log_path).unwrap();
+    let password = rpassword::prompt_password("Password: ").unwrap();
+
+    let log = KeyLog::from_file(&log_path, &password).unwrap();
     let mut file = OpenOptions::new().write(true).create(true).open(out_path)?;
 
     writeln!(file, "time,key")?;
