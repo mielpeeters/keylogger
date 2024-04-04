@@ -33,7 +33,9 @@ pub fn encrypt(data: &[u8], password: &[u8]) -> Result<Vec<u8>, Box<dyn std::err
     };
 
     res.extend_from_slice(salt);
+    println!("Salt: {:?}, len: {}", salt, salt.len());
     res.extend_from_slice(&nonce);
+    println!("Nonce: {:?}, len: {}", nonce, nonce.len());
     res.extend_from_slice(&ciphertext);
 
     Ok(res)
@@ -41,7 +43,9 @@ pub fn encrypt(data: &[u8], password: &[u8]) -> Result<Vec<u8>, Box<dyn std::err
 
 pub fn decrypt(data: &[u8], password: &[u8]) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let salt = &data[..16];
+    println!("Salt: {:?}, len: {}", salt, salt.len());
     let nonce = &data[16..28];
+    println!("Nonce: {:?}, len: {}", nonce, nonce.len());
 
     let key = derive_key(password, salt);
 
