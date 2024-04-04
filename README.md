@@ -19,6 +19,7 @@ command can be used from within any directory.
 Note: this is the data directory of the superuser.
 
 # Usage
+
 First, find out which event file in `/dev/input/` is your keyboard. 
 You can use the tool `evtest` to find the event file number (`eventX`).
 
@@ -38,10 +39,12 @@ sudo keylogger heatmap -o heatmap.svg
 This will generate a heatmap image at `heatmap.svg`.
 
 # Features
+
 The `bell` feature is something I implemented for myself, and won't work generally.
 
+# Changelog 
+- `0.1.0` -> `0.2.0`: added AES256-GCM password-protected encryption. Also added `encrypt` subcommand to encrypt `0.1.0` keylog files to ensure compatibility with `0.2.0`.
 
 # Roadmap
 
 - add different keyboard layouts support
-- add encryption of the output file with user-supplied password
