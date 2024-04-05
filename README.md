@@ -3,7 +3,6 @@
 Log your keystrokes and generate heatmaps of your typing patterns.
 
 
-**Beware**: the key log is not encrypted and contains all keystrokes (including passwords). Use at your own risk.
 
 # Installation
 
