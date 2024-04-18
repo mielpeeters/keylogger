@@ -58,16 +58,17 @@ pub fn qwerty_ansi() -> Result<PathBuf, Box<dyn std::error::Error>> {
 
 pub fn encrypt(args: EncryptArgs) -> Result<(), Box<dyn std::error::Error>> {
     let log_path = match args.in_path {
-        Some(path) => path,
-        None => {
-            let path = log_bin()?;
-            path.to_str().unwrap().to_string()
-        }
+        Some(path) => path.into(),
+        None => log_bin()?,
     };
-    let data = std::fs::read(&log_path)?;
+    let out_path = match args.out_path {
+        Some(path) => path.into(),
+        None => log_bin()?,
+    };
+    let data = std::fs::read(log_path)?;
     let password = rpassword::prompt_password("Password: ").unwrap();
     let encrypted = crate::encrypt::encrypt(&data, password.as_bytes())?;
-    std::fs::write(log_path, encrypted)?;
+    std::fs::write(out_path, encrypted)?;
 
     Ok(())
 }

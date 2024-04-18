@@ -46,6 +46,9 @@ mod encrypt;
 mod files;
 mod heatmap;
 mod keylog;
+// TODO: find a better name
+mod legacy;
+mod worktime;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let term = Arc::new(AtomicBool::new(false));
@@ -59,5 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cli::SubCommand::Export(e) => keylog::export(e),
         cli::SubCommand::Heatmap(h) => heatmap::heatmap(h),
         cli::SubCommand::Encrypt(e) => files::encrypt(e),
+        cli::SubCommand::Analyze(a) => worktime::analyze_time(a),
+        cli::SubCommand::Convert(c) => legacy::convert(c),
     }
 }

@@ -3,9 +3,11 @@ use crate::{cli, encrypt, files};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "bell")]
 use soloud::{audio, AudioExt as _, LoadExt, Soloud};
+use std::fmt::Debug;
 use std::io::Read;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{fs::OpenOptions, io::Write};
 
 #[cfg(feature = "bell")]
@@ -15,16 +17,16 @@ static SOUND: &[u8] = include_bytes!("../bell.wav");
 pub struct KeyLog(pub Vec<KeyPress>);
 
 impl KeyLog {
-    fn new() -> Self {
+    pub fn new() -> Self {
         KeyLog(Vec::new())
     }
 
-    fn add(&mut self, key_press: KeyPress) {
+    pub fn add(&mut self, key_press: KeyPress) {
         self.0.push(key_press);
     }
 
-    fn log(&mut self, key: u16) {
-        let key_press = KeyPress::new(key);
+    fn log(&mut self, input_event: &[u8; 24]) {
+        let key_press = KeyPress::new(input_event);
         self.add(key_press);
     }
 
@@ -32,7 +34,10 @@ impl KeyLog {
         self.0.len()
     }
 
-    pub fn from_file(path: &str, password: &str) -> Option<Self> {
+    pub fn from_file<P>(path: P, password: &str) -> Option<Self>
+    where
+        P: AsRef<std::path::Path>,
+    {
         let Ok(mut file) = OpenOptions::new().read(true).open(path) else {
             return None;
         };
@@ -42,13 +47,18 @@ impl KeyLog {
         Some(bincode::deserialize(&buffer).unwrap())
     }
 
-    fn to_file(&self, path: &str, password: &str) {
+    pub fn to_file<P>(&self, path: P, password: &str)
+    where
+        P: AsRef<std::path::Path> + Debug,
+    {
         let mut file = OpenOptions::new()
             .write(true)
             .truncate(true)
             .create(true)
-            .open(path)
-            .unwrap();
+            .open(&path)
+            .unwrap_or_else(|_| {
+                panic!("path {:?} could not be opened for truncated writing", path)
+            });
         let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
         let encrypted = encrypt::encrypt(&encoded, password.as_bytes()).unwrap();
         file.write_all(&encrypted).unwrap();
@@ -61,20 +71,21 @@ impl KeyLog {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct KeyPress {
     /// a timestamp
-    pub time: u128,
+    pub time: SystemTime,
     /// a C short
     pub key: u16,
 }
 
 impl KeyPress {
-    fn new(key: u16) -> Self {
-        KeyPress {
-            time: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_millis(),
-            key,
-        }
+    fn new(input_event: &[u8; 24]) -> Self {
+        let key: [u8; 2] = input_event[18..20].try_into().unwrap();
+        let key = u16::from_ne_bytes(key);
+        let tv_sec: [u8; 8] = input_event[0..8].try_into().unwrap();
+        let tv_sec = u64::from_ne_bytes(tv_sec);
+        let tv_usec: [u8; 8] = input_event[8..16].try_into().unwrap();
+        let tv_usec = u64::from_ne_bytes(tv_usec);
+        let time = UNIX_EPOCH + Duration::from_secs(tv_sec) + Duration::from_micros(tv_usec);
+        KeyPress { time, key }
     }
 }
 
@@ -97,15 +108,12 @@ pub fn log_keys(
     args: cli::LogArgs,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let out_path = match args.out_path {
-        Some(path) => path,
-        None => {
-            let path = files::log_bin()?;
-            path.to_str().unwrap().to_string()
-        }
+        Some(path) => path.into(),
+        None => files::log_bin()?,
     };
     // keyd virtual keyboard
-    let path = format!("/dev/input/event{}", args.event);
-    let mut file = OpenOptions::new().read(true).open(path)?;
+    let event_path = format!("/dev/input/event{}", args.event);
+    let mut file = OpenOptions::new().read(true).open(event_path)?;
 
     let mut buffer = [0; 24];
 
@@ -134,7 +142,7 @@ pub fn log_keys(
                 last_key = key;
             }
 
-            log.log(key);
+            log.log(&buffer);
         }
 
         if term.load(Ordering::Relaxed) {
@@ -152,30 +160,24 @@ pub fn log_keys(
 
 pub fn export(args: cli::ExportArgs) -> Result<(), Box<dyn std::error::Error>> {
     let log_path = match args.in_path {
-        Some(path) => path,
-        None => {
-            let path = files::log_bin()?;
-            path.to_str().unwrap().to_string()
-        }
+        Some(path) => path.into(),
+        None => files::log_bin()?,
     };
     let out_path = match args.out_path {
-        Some(path) => path,
-        None => {
-            let path = files::log_csv()?;
-            path.to_str().unwrap().to_string()
-        }
+        Some(path) => path.into(),
+        None => files::log_csv()?,
     };
 
     let password = rpassword::prompt_password("Password: ").unwrap();
 
-    let log = KeyLog::from_file(&log_path, &password).unwrap();
+    let log = KeyLog::from_file(log_path, &password).unwrap();
     let mut file = OpenOptions::new().write(true).create(true).open(out_path)?;
 
     writeln!(file, "time,key")?;
 
     for key_press in log.0 {
         let key: Keys = unsafe { std::mem::transmute(key_press.key) };
-        writeln!(file, "{},{}", key_press.time, key)?;
+        writeln!(file, "{:?},{}", key_press.time, key)?;
     }
 
     Ok(())

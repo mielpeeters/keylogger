@@ -19,6 +19,10 @@ nest! {
                 Heatmap(HeatmapArgs),
                 /// Encrypt the unencrypted log
                 Encrypt(EncryptArgs),
+                /// Analyse the keylog to find timing info.
+                Analyze(AnalyzeTimeArgs),
+                /// Convert to new keylog format
+                Convert(ConvertArgs),
             },
     }
 }
@@ -42,7 +46,7 @@ pub struct LogArgs {
     pub bell: bool,
 
     /// The events file number to log on
-    #[arg(short, long, default_value_t = 21)]
+    #[arg(short, long, default_value_t = 12)]
     pub event: u32,
 }
 
@@ -74,7 +78,29 @@ pub struct HeatmapArgs {
 
 #[derive(Args, Debug)]
 pub struct EncryptArgs {
-    /// The path to the repository directory
+    /// The path to the log file
     #[arg(short, long)]
     pub in_path: Option<String>,
+
+    /// The path to the encrypted output
+    #[arg(short, long)]
+    pub out_path: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct AnalyzeTimeArgs {
+    /// The path to the log file
+    #[arg(short, long)]
+    pub in_path: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct ConvertArgs {
+    /// The path to the old keylog file
+    #[arg(short, long)]
+    pub in_path: Option<String>,
+
+    /// The path to the new keylog file
+    #[arg(short, long)]
+    pub out_path: Option<String>,
 }

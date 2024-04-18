@@ -77,23 +77,17 @@ fn fill_empty(svg: &mut String) -> Result<(), Box<dyn std::error::Error>> {
 
 pub fn heatmap(args: HeatmapArgs) -> Result<(), Box<dyn std::error::Error>> {
     let log_path = match args.in_path {
-        Some(path) => path,
-        None => {
-            let path = files::log_bin()?;
-            path.to_str().unwrap().to_string()
-        }
+        Some(path) => path.into(),
+        None => files::log_bin()?,
     };
     let kbd_svg_path = match args.keyboard_svg_path {
-        Some(path) => path,
-        None => {
-            let path = files::qwerty_ansi()?;
-            path.to_str().unwrap().to_string()
-        }
+        Some(path) => path.into(),
+        None => files::qwerty_ansi()?,
     };
 
     let password = rpassword::prompt_password("Password: ").unwrap();
 
-    let log = KeyLog::from_file(&log_path, &password).unwrap();
+    let log = KeyLog::from_file(log_path, &password).unwrap();
 
     let mut keyboard_svg = OpenOptions::new().read(true).open(kbd_svg_path)?;
     let mut kbd = String::new();
