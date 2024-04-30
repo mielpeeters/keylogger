@@ -42,6 +42,7 @@ This will generate a heatmap image at `heatmap.svg`.
 The `bell` feature is something I implemented for myself, and won't work generally.
 
 # Changelog 
+- `0.2.0` -> `0.3.0`: added `analyze` subcommand to show when you used your computer. Also changed internal time format to `SystemTime`, and added `convert` subcommand to transform your keylog data file to the new format for backward compatibility.
 - `0.1.0` -> `0.2.0`: added AES256-GCM password-protected encryption. Also added `encrypt` subcommand to encrypt `0.1.0` keylog files to ensure compatibility with `0.2.0`.
 
 # Roadmap
