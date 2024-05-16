@@ -3,7 +3,7 @@
 use std::fmt::Display;
 
 #[repr(u16)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Keys {
     KeyReserved = 0,
     KeyEsc = 1,
@@ -1029,5 +1029,66 @@ impl Display for Keys {
         };
 
         write!(f, "{}", string)
+    }
+}
+
+impl Keys {
+    /// Check if this key is a normal letter or number
+    pub fn letter_or_number(&self) -> bool {
+        let code = *self as u16;
+
+        // numbers
+        if (2..=11).contains(&code) {
+            return true;
+        }
+        // Q -> P
+        if (16..=25).contains(&code) {
+            return true;
+        }
+        // A -> L
+        if (30..=38).contains(&code) {
+            return true;
+        }
+        // Z -> M
+        if (44..=50).contains(&code) {
+            return true;
+        }
+
+        // numpad numbers
+        if (71..=73).contains(&code) {
+            return true;
+        }
+        if (75..=77).contains(&code) {
+            return true;
+        }
+        if (79..=82).contains(&code) {
+            return true;
+        }
+
+        false
+    }
+
+    pub fn written(&self) -> Option<char> {
+        if self.letter_or_number() {
+            let string = format!("{}", self).to_lowercase();
+            let char = string.chars().next().unwrap();
+            return Some(char);
+        }
+
+        None
+    }
+
+    fn modifier(&self) -> bool {
+        matches!(
+            self,
+            Keys::KeyLeftctrl
+                | Keys::KeyRightctrl
+                | Keys::KeyLeftshift
+                | Keys::KeyRightshift
+                | Keys::KeyLeftalt
+                | Keys::KeyRightalt
+                | Keys::KeyLeftmeta
+                | Keys::KeyRightmeta
+        )
     }
 }

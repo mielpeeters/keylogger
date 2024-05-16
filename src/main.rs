@@ -46,8 +46,8 @@ mod encrypt;
 mod files;
 mod heatmap;
 mod keylog;
-// TODO: find a better name
 mod legacy;
+mod words;
 mod worktime;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -64,5 +64,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cli::SubCommand::Encrypt(e) => files::encrypt(e),
         cli::SubCommand::Analyze(a) => worktime::analyze_time(a),
         cli::SubCommand::Convert(c) => legacy::convert(c),
+        cli::SubCommand::Words(w) => words::words(&w),
     }
 }

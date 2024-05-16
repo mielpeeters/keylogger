@@ -23,6 +23,8 @@ nest! {
                 Analyze(AnalyzeTimeArgs),
                 /// Convert to new keylog format
                 Convert(ConvertArgs),
+                /// Find which words are typed most often
+                Words(WordsArgs),
             },
     }
 }
@@ -103,4 +105,11 @@ pub struct ConvertArgs {
     /// The path to the new keylog file
     #[arg(short, long)]
     pub out_path: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct WordsArgs {
+    /// The path to the log file
+    #[arg(short, long)]
+    pub in_path: Option<String>,
 }
