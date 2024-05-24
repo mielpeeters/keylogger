@@ -65,5 +65,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cli::SubCommand::Analyze(a) => worktime::analyze_time(a),
         cli::SubCommand::Convert(c) => legacy::convert(c),
         cli::SubCommand::Words(w) => words::words(&w),
+        cli::SubCommand::Compress(c) => keylog::compress(&c),
     }
 }

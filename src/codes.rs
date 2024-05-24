@@ -1073,12 +1073,14 @@ impl Keys {
             let string = format!("{}", self).to_lowercase();
             let char = string.chars().next().unwrap();
             return Some(char);
+        } else if self.modifier() {
+            return Some(' ');
         }
 
         None
     }
 
-    fn modifier(&self) -> bool {
+    pub fn modifier(&self) -> bool {
         matches!(
             self,
             Keys::KeyLeftctrl

@@ -6,13 +6,20 @@ use std::collections::HashMap;
 
 use crate::{cli::WordsArgs, codes::Keys, files, keylog::KeyLog};
 
-pub fn parse_words(log: &KeyLog) -> Result<HashMap<String, u64>, Box<dyn std::error::Error>> {
+pub fn parse_words(
+    log: &KeyLog,
+    min_length: usize,
+) -> Result<HashMap<String, u64>, Box<dyn std::error::Error>> {
     let mut words = HashMap::new();
 
-    let written = log.0.iter().map(|press| {
-        let key: Keys = unsafe { std::mem::transmute(press.key) };
-        key.written()
-    });
+    let written = log
+        .0
+        .iter()
+        .map(|press| {
+            let key: Keys = unsafe { std::mem::transmute(press.key) };
+            key.written()
+        })
+        .filter(|c| (c.is_some() && c.unwrap() != ' ') || c.is_none());
 
     // println!("{:?}", written.clone().collect::<Vec<_>>());
 
@@ -29,7 +36,7 @@ pub fn parse_words(log: &KeyLog) -> Result<HashMap<String, u64>, Box<dyn std::er
         }
     });
 
-    word_list.retain(|w| w.len() >= 2);
+    word_list.retain(|w| w.len() >= min_length);
 
     for word in word_list {
         let count = words.entry(word).or_insert(0);
@@ -53,7 +60,7 @@ pub fn words(args: &WordsArgs) -> Result<(), Box<dyn std::error::Error>> {
         None => return Err(format!("Keylog file {:?} does not exist...", log_path).into()),
     };
 
-    let words = parse_words(&log)?;
+    let words = parse_words(&log, args.length)?;
 
     // pretty print the results, sorted
     let mut words: Vec<_> = words.into_iter().collect();

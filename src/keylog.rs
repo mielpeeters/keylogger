@@ -1,5 +1,7 @@
 use crate::codes::Keys;
 use crate::{cli, encrypt, files};
+use miniz_oxide::deflate::compress_to_vec;
+use miniz_oxide::inflate::decompress_to_vec_with_limit;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "bell")]
 use soloud::{audio, AudioExt as _, LoadExt, Soloud};
@@ -41,10 +43,12 @@ impl KeyLog {
         let Ok(mut file) = OpenOptions::new().read(true).open(path) else {
             return None;
         };
-        let mut buffer = Vec::new();
-        file.read_to_end(&mut buffer).unwrap();
-        let buffer = encrypt::decrypt(&buffer, password.as_bytes()).unwrap();
-        Some(bincode::deserialize(&buffer).unwrap())
+        let mut encrypted = Vec::new();
+        file.read_to_end(&mut encrypted).unwrap();
+        let decrypted = encrypt::decrypt(&encrypted, password.as_bytes()).unwrap();
+        let decompressed =
+            decompress_to_vec_with_limit(&decrypted, 1 << 30).expect("Failed to decompress");
+        Some(bincode::deserialize(&decompressed).unwrap())
     }
 
     pub fn to_file<P>(&self, path: P, password: &str)
@@ -60,7 +64,8 @@ impl KeyLog {
                 panic!("path {:?} could not be opened for truncated writing", path)
             });
         let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
-        let encrypted = encrypt::encrypt(&encoded, password.as_bytes()).unwrap();
+        let compressed = compress_to_vec(&encoded, 6);
+        let encrypted = encrypt::encrypt(&compressed, password.as_bytes()).unwrap();
         file.write_all(&encrypted).unwrap();
     }
 }
@@ -172,7 +177,11 @@ pub fn export(args: cli::ExportArgs) -> Result<(), Box<dyn std::error::Error>> {
     let password = rpassword::prompt_password("Password: ").unwrap();
 
     let log = KeyLog::from_file(log_path, &password).unwrap();
-    let mut file = OpenOptions::new().write(true).create(true).open(out_path)?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(out_path)?;
 
     writeln!(file, "time,key")?;
 
@@ -180,6 +189,29 @@ pub fn export(args: cli::ExportArgs) -> Result<(), Box<dyn std::error::Error>> {
         let key: Keys = unsafe { std::mem::transmute(key_press.key) };
         writeln!(file, "{:?},{}", key_press.time, key)?;
     }
+
+    Ok(())
+}
+
+pub fn compress(args: &cli::CompressArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let log_path = match &args.in_path {
+        Some(path) => path.into(),
+        None => files::log_bin()?,
+    };
+    let out_path = match &args.out_path {
+        Some(path) => path.into(),
+        None => files::log_bin()?,
+    };
+
+    let password = rpassword::prompt_password("Password: ").unwrap();
+
+    let mut file = OpenOptions::new().read(true).open(log_path).unwrap();
+    let mut encrypted = Vec::new();
+    file.read_to_end(&mut encrypted).unwrap();
+    let decrypted = encrypt::decrypt(&encrypted, password.as_bytes()).unwrap();
+    let log: KeyLog = bincode::deserialize(&decrypted).unwrap();
+
+    log.to_file(out_path, &password);
 
     Ok(())
 }

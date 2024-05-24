@@ -25,6 +25,8 @@ nest! {
                 Convert(ConvertArgs),
                 /// Find which words are typed most often
                 Words(WordsArgs),
+                /// Compress the log file
+                Compress(CompressArgs)
             },
     }
 }
@@ -112,4 +114,19 @@ pub struct WordsArgs {
     /// The path to the log file
     #[arg(short, long)]
     pub in_path: Option<String>,
+
+    /// Minimum word length
+    #[arg(short, long, default_value = "2")]
+    pub length: usize,
+}
+
+#[derive(Args, Debug)]
+pub struct CompressArgs {
+    /// The path to the log file
+    #[arg(short, long)]
+    pub in_path: Option<String>,
+
+    /// The path to the compressed output
+    #[arg(short, long)]
+    pub out_path: Option<String>,
 }
